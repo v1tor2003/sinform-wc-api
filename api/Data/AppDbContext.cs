@@ -13,6 +13,7 @@ public class AppDbContext : DbContext
     public DbSet<Sweepstakes> Sweepstakes => Set<Sweepstakes>();
     public DbSet<Participant> Participants => Set<Participant>();
     public DbSet<Guess> Guesses => Set<Guess>();
+    public DbSet<OfficialPhaseResult> OfficialPhaseResults => Set<OfficialPhaseResult>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -75,6 +76,15 @@ public class AppDbContext : DbContext
                   .WithOne()
                   .HasForeignKey<Guess>(e => e.ParticipantId)
                   .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<OfficialPhaseResult>(entity =>
+        {
+            entity.HasKey(e => e.Phase);
+            entity.Property(e => e.Phase).HasMaxLength(50);
+            entity.Property(e => e.FirstPlace).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.SecondPlace).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.ThirdPlace).HasMaxLength(100);
         });
     }
 }

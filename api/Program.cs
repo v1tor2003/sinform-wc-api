@@ -3,8 +3,10 @@ using Scalar.AspNetCore;
 using SinformWcApi.Data;
 using SinformWcApi.Features.Auth;
 using SinformWcApi.Features.Guesses;
+using SinformWcApi.Features.OfficialResults;
 using SinformWcApi.Features.Sweepstakes;
 using SinformWcApi.Middleware;
+using SinformWcApi.Workers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +24,9 @@ builder.Services.AddStackExchangeRedisCache(options =>
 {
     options.Configuration = builder.Configuration.GetConnectionString("RedisConnection");
 });
+
+// Register background worker
+builder.Services.AddHostedService<SweepstakesProcessingWorker>();
 
 // Add services to the container.
 builder.Services.AddOpenApi();
@@ -55,6 +60,7 @@ app.MapGetSweepstakesMetadataEndpoint();
 app.MapJoinSweepstakesEndpoint();
 app.MapCreateOrUpdateGuessEndpoint();
 app.MapGetLeaderboardEndpoint();
+app.MapCreateOfficialResultEndpoint();
 
 app.MapGet("/health-check", () => Results.Ok("OK"))
    .WithName("HealthCheck");
