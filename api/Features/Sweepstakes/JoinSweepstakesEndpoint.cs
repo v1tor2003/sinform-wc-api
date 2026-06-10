@@ -7,6 +7,8 @@ using SinformWcApi.Contexts;
 using SinformWcApi.Middleware;
 using System;
 using System.ComponentModel.DataAnnotations;
+using SinformWcApi.Exceptions;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace SinformWcApi.Features.Sweepstakes;
@@ -18,6 +20,7 @@ public static class JoinSweepstakesEndpoint
         [StringLength(6, MinimumLength = 6, ErrorMessage = "Invite code must be exactly 6 characters.")]
         string InviteCode);
 
+    public record Request(string InviteCode);
     public record Response(Guid ParticipantId, Guid SweepstakesId, string SweepstakesName);
 
     public static void MapJoinSweepstakesEndpoint(this IEndpointRouteBuilder endpoints)
@@ -25,11 +28,19 @@ public static class JoinSweepstakesEndpoint
         endpoints.MapPost("/sweepstakes/join", async (Request request, AppDbContext dbContext, IUserContext userContext) =>
         {
             if (!userContext.IsAuthenticated || !userContext.UserId.HasValue)
+        endpoints.MapPost("/sweepstakes/join", async (Request request, HttpContext httpContext, AppDbContext dbContext) =>
+            var userIdClaim = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userIdClaim == null || !Guid.TryParse(userIdClaim, out var userId))
             {
                 return Results.Unauthorized();
             }
 
             var userId = userContext.UserId.Value;
+            if (string.IsNullOrWhiteSpace(request.InviteCode))
+            {
+                throw new DomainException("Invite code is required.");
+            }
+
             var inviteCodeNormalized = request.InviteCode.Trim().ToUpper();
 
             // Find sweepstakes
