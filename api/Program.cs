@@ -8,6 +8,7 @@ using SinformWcApi.Features.Sweepstakes;
 using SinformWcApi.Middleware;
 using SinformWcApi.Workers;
 using SinformWcApi.Services;
+using SinformWcApi.Contexts;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,6 +33,12 @@ builder.Services.AddStackExchangeRedisCache(options =>
 // Register scoring strategy and rules
 builder.Services.AddSingleton<IScoringStrategy, DefaultScoringStrategy>();
 builder.Services.AddSingleton<IActiveSweepstakesRule, ActiveSweepstakesRule>();
+
+// Register user context
+builder.Services.AddScoped<UserContext>();
+builder.Services.AddScoped<IUserContext>(sp => sp.GetRequiredService<UserContext>());
+// Register native validation
+builder.Services.AddValidation();
 // Register background worker
 builder.Services.AddHostedService<SweepstakesProcessingWorker>();
 
@@ -55,6 +62,10 @@ app.UseHttpsRedirection();
 
 // Custom API Key Authentication middleware
 app.UseApiKeyAuthentication();
+
+// Attach User Context and check Idempotency after auth
+app.UseMiddleware<AttachUserContextMiddleware>();
+app.UseMiddleware<IdempotencyActionMiddleware>();
 
 app.UseOutputCache();
 

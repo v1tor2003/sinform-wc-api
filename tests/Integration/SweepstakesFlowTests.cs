@@ -98,4 +98,29 @@ public class SweepstakesFlowTests : IntegrationTestBase
             .FirstOrDefaultAsync(p => p.SweepstakesId == sweepResult.Id && p.UserId == userB.Id);
         Assert.NotNull(participant);
     }
+
+    [Fact]
+    public async Task IT07_CreateSweepstakesInvalidPayload_ShouldReturn400BadRequest()
+    {
+        // Arrange
+        var apiKey = "user-a-key";
+        await CreateUserAsync("User A", "user.a@email.com", apiKey);
+
+        var invalidSweep = new
+        {
+            Name = "", // Invalid: required
+            Description = "Desc",
+            Phase = "", // Invalid: required
+            GuessesDeadline = DateTime.UtcNow.AddDays(-1), // Invalid: must be in the future
+            QualifiedCount = 0, // Invalid: must be >= 1
+            IncludeThird = false
+        };
+
+        // Act
+        var response = await PostJsonAsync("/sweepstakes", invalidSweep, apiKey);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
 }
+
