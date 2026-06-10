@@ -5,26 +5,27 @@ using Microsoft.EntityFrameworkCore;
 using SinformWcApi.Data;
 using SinformWcApi.Entities;
 using System;
+using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 
 namespace SinformWcApi.Features.Auth;
 
 public static class RegisterEndpoint
 {
-    public record Request(string Name, string Email, string Password);
+    public record Request(
+        [Required(ErrorMessage = "Name is required.")]
+        string Name,
+        [Required(ErrorMessage = "Email is required.")]
+        [EmailAddress(ErrorMessage = "Invalid email format.")]
+        string Email,
+        [Required(ErrorMessage = "Password is required.")]
+        string Password);
     public record Response(string Message);
 
     public static void MapRegisterEndpoint(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapPost("/auth/register", async (Request request, AppDbContext dbContext) =>
         {
-            if (string.IsNullOrWhiteSpace(request.Name) ||
-                string.IsNullOrWhiteSpace(request.Email) ||
-                string.IsNullOrWhiteSpace(request.Password))
-            {
-                return Results.BadRequest("Name, Email, and Password are required.");
-            }
-
             var emailNormalized = request.Email.Trim().ToLower();
 
             var exists = await dbContext.Users.AnyAsync(u => u.Email == emailNormalized);
@@ -55,3 +56,4 @@ public static class RegisterEndpoint
         .WithTags("Auth");
     }
 }
+

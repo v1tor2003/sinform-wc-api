@@ -4,25 +4,26 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using SinformWcApi.Entities;
 using System;
+using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 
 namespace SinformWcApi.Features.OfficialResults;
 
 public static class CreateOfficialResultEndpoint
 {
-    public record Request(string Phase, string FirstPlace, string SecondPlace, string? ThirdPlace);
+    public record Request(
+        [Required(ErrorMessage = "Phase is required.")]
+        string Phase,
+        [Required(ErrorMessage = "FirstPlace is required.")]
+        string FirstPlace,
+        [Required(ErrorMessage = "SecondPlace is required.")]
+        string SecondPlace,
+        string? ThirdPlace);
 
     public static void MapCreateOfficialResultEndpoint(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapPost("/official-results", async (Request request, AppDbContext dbContext) =>
         {
-            if (string.IsNullOrWhiteSpace(request.Phase) || 
-                string.IsNullOrWhiteSpace(request.FirstPlace) || 
-                string.IsNullOrWhiteSpace(request.SecondPlace))
-            {
-                return Results.BadRequest("Phase, FirstPlace, and SecondPlace are required.");
-            }
-
             var result = await dbContext.OfficialPhaseResults.FirstOrDefaultAsync(r => r.Phase == request.Phase);
             if (result == null)
             {
@@ -53,3 +54,4 @@ public static class CreateOfficialResultEndpoint
         .WithTags("OfficialResults");
     }
 }
+

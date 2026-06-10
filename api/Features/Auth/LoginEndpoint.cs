@@ -3,24 +3,25 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using SinformWcApi.Data;
+using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 
 namespace SinformWcApi.Features.Auth;
 
 public static class LoginEndpoint
 {
-    public record Request(string Email, string Password);
+    public record Request(
+        [Required(ErrorMessage = "Email is required.")]
+        [EmailAddress(ErrorMessage = "Invalid email format.")]
+        string Email,
+        [Required(ErrorMessage = "Password is required.")]
+        string Password);
     public record Response(string ApiKey);
 
     public static void MapLoginEndpoint(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapPost("/auth/login", async (Request request, AppDbContext dbContext) =>
         {
-            if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
-            {
-                return Results.BadRequest("Email and Password are required.");
-            }
-
             var emailNormalized = request.Email.Trim().ToLower();
 
             var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email == emailNormalized);
@@ -41,3 +42,4 @@ public static class LoginEndpoint
         .WithTags("Auth");
     }
 }
+

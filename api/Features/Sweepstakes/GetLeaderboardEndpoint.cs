@@ -3,9 +3,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using SinformWcApi.Middleware;
+using SinformWcApi.Contexts;
 using System;
 using System.Linq;
-using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace SinformWcApi.Features.Sweepstakes;
@@ -17,13 +17,14 @@ public static class GetLeaderboardEndpoint
 
     public static void MapGetLeaderboardEndpoint(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapGet("/sweepstakes/{id:guid}/leaderboard", async (Guid id, HttpContext httpContext, AppDbContext dbContext) =>
+        endpoints.MapGet("/sweepstakes/{id:guid}/leaderboard", async (Guid id, AppDbContext dbContext, IUserContext userContext) =>
         {
-            var userIdClaim = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userIdClaim == null || !Guid.TryParse(userIdClaim, out var userId))
+            if (!userContext.IsAuthenticated || !userContext.UserId.HasValue)
             {
                 return Results.Unauthorized();
             }
+
+            var userId = userContext.UserId.Value;
 
             // Verify if sweepstakes exists
             var sweepstakesExists = await dbContext.Sweepstakes.AnyAsync(s => s.Id == id);
@@ -63,3 +64,4 @@ public static class GetLeaderboardEndpoint
             .Tag("sb-leaderboard"));
     }
 }
+
