@@ -14,6 +14,10 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // Configure caching services
 builder.Services.AddOutputCache();
+builder.Services.AddStackExchangeRedisOutputCache(options =>
+{
+    options.Configuration = builder.Configuration.GetConnectionString("RedisConnection");
+});
 builder.Services.AddStackExchangeRedisCache(options =>
 {
     options.Configuration = builder.Configuration.GetConnectionString("RedisConnection");
@@ -50,6 +54,7 @@ app.MapGetSweepstakesEndpoint();
 app.MapGetSweepstakesMetadataEndpoint();
 app.MapJoinSweepstakesEndpoint();
 app.MapCreateOrUpdateGuessEndpoint();
+app.MapGetLeaderboardEndpoint();
 
 app.MapGet("/health-check", () => Results.Ok("OK"))
    .WithName("HealthCheck");
