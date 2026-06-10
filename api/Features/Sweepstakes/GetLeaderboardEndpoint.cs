@@ -26,6 +26,7 @@ public static class GetLeaderboardEndpoint
         endpoints.MapGet("/sweepstakes/{id:guid}/leaderboard", async (Guid id, HttpContext httpContext, AppDbContext dbContext) =>
             var userIdClaim = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (userIdClaim == null || !Guid.TryParse(userIdClaim, out var userId))
+        endpoints.MapGet("/sweepstakes/{id:guid}/leaderboard", async (Guid id, AppDbContext dbContext, IUserContext userContext) =>
             {
                 return Results.Unauthorized();
             }
@@ -35,6 +36,7 @@ public static class GetLeaderboardEndpoint
             var items = participants
                 .OrderByDescending(p => p.TotalScore)
                 .ThenBy(p => p.User!.Name)
+            var userId = userContext.UserId.Value;
             // Verify if sweepstakes exists
             var sweepstakesExists = await dbContext.Sweepstakes.AnyAsync(s => s.Id == id);
             if (!sweepstakesExists)
@@ -65,3 +67,4 @@ public static class GetLeaderboardEndpoint
             .Tag("sb-leaderboard"));
     }
 }
+

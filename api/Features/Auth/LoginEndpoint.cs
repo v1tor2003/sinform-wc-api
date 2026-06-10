@@ -26,6 +26,10 @@ public static class LoginEndpoint
         {
             var apiKey = await authService.LoginAsync(request.Email, request.Password);
             if (apiKey == null)
+            var emailNormalized = request.Email.Trim().ToLower();
+
+            var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email == emailNormalized);
+            if (user == null)
             {
                 return Results.Unauthorized();
             }
@@ -36,3 +40,4 @@ public static class LoginEndpoint
         .WithTags("Auth");
     }
 }
+

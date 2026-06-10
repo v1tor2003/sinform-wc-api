@@ -8,6 +8,9 @@ using System.Threading.Tasks;
 using SinformWcApi.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using SinformWcApi.Entities;
+using System;
+using System.ComponentModel.DataAnnotations;
+using System.Threading.Tasks;
 
 namespace SinformWcApi.Features.OfficialResults;
 
@@ -61,3 +64,4 @@ public static class CreateOfficialResultEndpoint
         .WithTags("OfficialResults");
     }
 }
+
