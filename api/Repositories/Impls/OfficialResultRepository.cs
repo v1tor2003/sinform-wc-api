@@ -1,3 +1,4 @@
+using SinformWcApi.Data;
 using Microsoft.EntityFrameworkCore;
 using SinformWcApi.Entities;
 using System;

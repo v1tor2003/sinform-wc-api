@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.EntityFrameworkCore;
-using SinformWcApi.Data;
 using SinformWcApi.Services.Impls;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
@@ -26,10 +24,6 @@ public static class LoginEndpoint
         {
             var apiKey = await authService.LoginAsync(request.Email, request.Password);
             if (apiKey == null)
-            var emailNormalized = request.Email.Trim().ToLower();
-
-            var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email == emailNormalized);
-            if (user == null)
             {
                 return Results.Unauthorized();
             }

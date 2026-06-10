@@ -1,4 +1,5 @@
 using SinformWcApi.Features.Sweepstakes;
+using SinformWcApi.Data;
 using SinformWcApi.Features.Guesses;
 using System;
 using System.Net;
@@ -12,6 +13,10 @@ namespace SinformWcApi.Tests.Integration;
 
 public class GuessesAndIdempotencyTests : IntegrationTestBase
 {
+    public GuessesAndIdempotencyTests(TestcontainersFixture fixture) : base(fixture)
+    {
+    }
+
     [Fact]
     public async Task IT05_SubmitGuessAfterDeadline_ShouldReturn400BadRequest()
     {

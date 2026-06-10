@@ -1,15 +1,12 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using SinformWcApi.Middleware;
 using SinformWcApi.Contexts;
-using SinformWcApi.Services.Impls;
+using SinformWcApi.Middleware;
+using SinformWcApi.Services.Interfaces;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using SinformWcApi.Services.Interfaces;
-using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 
 namespace SinformWcApi.Features.Sweepstakes;
 
@@ -23,10 +20,6 @@ public static class GetLeaderboardEndpoint
         endpoints.MapGet("/sweepstakes/{id:guid}/leaderboard", async (Guid id, ISweepstakesService sweepstakesService, IUserContext userContext) =>
         {
             if (!userContext.IsAuthenticated || !userContext.UserId.HasValue)
-        endpoints.MapGet("/sweepstakes/{id:guid}/leaderboard", async (Guid id, HttpContext httpContext, AppDbContext dbContext) =>
-            var userIdClaim = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userIdClaim == null || !Guid.TryParse(userIdClaim, out var userId))
-        endpoints.MapGet("/sweepstakes/{id:guid}/leaderboard", async (Guid id, AppDbContext dbContext, IUserContext userContext) =>
             {
                 return Results.Unauthorized();
             }
@@ -36,22 +29,6 @@ public static class GetLeaderboardEndpoint
             var items = participants
                 .OrderByDescending(p => p.TotalScore)
                 .ThenBy(p => p.User!.Name)
-            var userId = userContext.UserId.Value;
-            // Verify if sweepstakes exists
-            var sweepstakesExists = await dbContext.Sweepstakes.AnyAsync(s => s.Id == id);
-            if (!sweepstakesExists)
-            {
-                return Results.NotFound("Sweepstakes not found.");
-            }
-            // Verify if user is participant
-            var isParticipant = await dbContext.Participants.AnyAsync(p => p.SweepstakesId == id && p.UserId == userId);
-            if (!isParticipant)
-                return Results.Json(new { message = "User is not a participant of this sweepstakes." }, statusCode: StatusCodes.Status403Forbidden);
-            // Get leaderboard items
-            var participants = await dbContext.Participants
-                .Where(p => p.SweepstakesId == id)
-                .Include(p => p.User)
-                .ToListAsync();
                 .Select((p, idx) => new LeaderboardItem(idx + 1, p.User?.Name ?? "Unknown", p.TotalScore))
                 .ToArray();
 

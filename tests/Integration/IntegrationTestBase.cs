@@ -1,18 +1,14 @@
 using Microsoft.AspNetCore.Hosting;
+using SinformWcApi.Data;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.AspNetCore.OutputCaching;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.DependencyInjection;
-using Moq;
 using SinformWcApi.Entities;
+using StackExchange.Redis;
 using System;
 using System.Linq;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -20,28 +16,26 @@ using Xunit;
 
 namespace SinformWcApi.Tests.Integration;
 
+[Collection("SharedContainers")]
 public class IntegrationTestBase : IDisposable
 {
     protected readonly WebApplicationFactory<Program> Factory;
     protected readonly HttpClient Client;
-    protected readonly Mock<IOutputCacheStore> MockCacheStore;
-    private readonly SqliteConnection _connection;
+    protected readonly TestcontainersFixture Fixture;
 
-    public IntegrationTestBase()
+    public IntegrationTestBase(TestcontainersFixture fixture)
     {
-        // Setup SQLite in-memory database connection
-        _connection = new SqliteConnection("DataSource=:memory:");
-        _connection.Open();
-
-        MockCacheStore = new Mock<IOutputCacheStore>();
-        MockCacheStore
-            .Setup(c => c.EvictByTagAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Returns(ValueTask.CompletedTask);
+        Fixture = fixture;
 
         Factory = new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
             {
                 builder.UseEnvironment("Testing");
+                
+                // Override connection strings to point to the containers
+                builder.UseSetting("ConnectionStrings:DefaultConnection", Fixture.PostgreSqlContainer.GetConnectionString());
+                builder.UseSetting("ConnectionStrings:RedisConnection", Fixture.RedisContainer.GetConnectionString());
+
                 builder.ConfigureServices(services =>
                 {
                     // Remove existing DbContext registration
@@ -52,42 +46,39 @@ public class IntegrationTestBase : IDisposable
                         services.Remove(desc);
                     }
 
-                    // Add SQLite DbContext
+                    // Add PostgreSQL DbContext pointing to our container
                     services.AddDbContext<AppDbContext>(options =>
                     {
-                        options.UseSqlite(_connection);
+                        options.UseNpgsql(Fixture.PostgreSqlContainer.GetConnectionString());
                     });
-
-                    // Remove existing IDistributedCache registration
-                    var distributedCacheDescriptors = services.Where(
-                        d => d.ServiceType == typeof(IDistributedCache)).ToList();
-                    foreach (var desc in distributedCacheDescriptors)
-                    {
-                        services.Remove(desc);
-                    }
-
-                    // Add Memory cache to replace Redis IDistributedCache
-                    services.AddDistributedMemoryCache();
-
-                    // Replace IOutputCacheStore with our mock
-                    var cacheDescriptors = services.Where(
-                        d => d.ServiceType == typeof(IOutputCacheStore)).ToList();
-                    foreach (var desc in cacheDescriptors)
-                    {
-                        services.Remove(desc);
-                    }
-                    services.AddSingleton<IOutputCacheStore>(MockCacheStore.Object);
                 });
             });
 
-        // Initialize schema
+        // Initialize schema (ensure created, then truncate to clean slate)
         using (var scope = Factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             db.Database.EnsureCreated();
+            db.Database.ExecuteSqlRaw("TRUNCATE TABLE \"Guesses\", \"Participants\", \"Sweepstakes\", \"Users\", \"OfficialPhaseResults\" RESTART IDENTITY CASCADE;");
         }
 
+        // Flush Redis to guarantee cache isolation before each test
+        FlushRedis();
+
         Client = Factory.CreateClient();
+    }
+
+    private void FlushRedis()
+    {
+        var options = ConfigurationOptions.Parse(Fixture.RedisContainer.GetConnectionString());
+        options.AllowAdmin = true;
+        using var redis = ConnectionMultiplexer.Connect(options);
+        var endpoints = redis.GetEndPoints();
+        foreach (var endpoint in endpoints)
+        {
+            var server = redis.GetServer(endpoint);
+            server.FlushAllDatabases();
+        }
     }
 
     protected async Task<User> CreateUserAsync(string name, string email, string apiKey)
@@ -155,8 +146,6 @@ public class IntegrationTestBase : IDisposable
     {
         Client.Dispose();
         Factory.Dispose();
-        _connection.Close();
-        _connection.Dispose();
         GC.SuppressFinalize(this);
     }
 }

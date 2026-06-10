@@ -1,4 +1,5 @@
 using SinformWcApi.Features.Sweepstakes;
+using SinformWcApi.Data;
 using System;
 using System.Linq;
 using System.Net;
@@ -12,6 +13,10 @@ namespace SinformWcApi.Tests.Integration;
 
 public class SweepstakesFlowTests : IntegrationTestBase
 {
+    public SweepstakesFlowTests(TestcontainersFixture fixture) : base(fixture)
+    {
+    }
+
     [Fact]
     public async Task IT03_PreventSecondActiveSweepstakes_ShouldReturn400BadRequest()
     {

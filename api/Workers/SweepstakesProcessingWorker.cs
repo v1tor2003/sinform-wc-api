@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using SinformWcApi.Data;
 using SinformWcApi.Entities;
 using SinformWcApi.Services.Interfaces;
 using SinformWcApi.Services.Impls;
@@ -91,24 +92,6 @@ public class SweepstakesProcessingWorker : BackgroundService
                     .FirstOrDefaultAsync(g => g.ParticipantId == participant.Id, stoppingToken);
 
                 int score = scoringStrategy.CalculateScore(guess, officialResult, sweep.IncludeThird);
-                int score = 0;
-                if (guess != null)
-                {
-                    if (guess.First.Equals(officialResult.FirstPlace, StringComparison.OrdinalIgnoreCase))
-                    {
-                        score += 10;
-                    }
-                    if (guess.Second.Equals(officialResult.SecondPlace, StringComparison.OrdinalIgnoreCase))
-                    {
-                        score += 10;
-                    }
-                    if (sweep.IncludeThird && 
-                        !string.IsNullOrWhiteSpace(guess.Third) && 
-                        guess.Third.Equals(officialResult.ThirdPlace, StringComparison.OrdinalIgnoreCase))
-                    {
-                        score += 10;
-                    }
-                }
 
                 participant.TotalScore = score;
             }

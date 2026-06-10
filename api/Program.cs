@@ -13,7 +13,6 @@ using SinformWcApi.Contexts;
 using SinformWcApi.Repositories.Interfaces;
 using SinformWcApi.Repositories.Impls;
 using SinformWcApi.Factories;
-using SinformWcApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,24 +37,13 @@ builder.Services.AddStackExchangeRedisCache(options =>
 // Register scoring strategy and rules
 builder.Services.AddSingleton<IScoringStrategy, DefaultScoringStrategy>();
 builder.Services.AddSingleton<IActiveSweepstakesRule, ActiveSweepstakesRule>();
+
 // Register user context
 builder.Services.AddScoped<UserContext>();
 builder.Services.AddScoped<IUserContext>(sp => sp.GetRequiredService<UserContext>());
+
 // Register native validation
 builder.Services.AddValidation();
-// Register repositories
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<ISweepstakesRepository, SweepstakesRepository>();
-builder.Services.AddScoped<IParticipantRepository, ParticipantRepository>();
-builder.Services.AddScoped<IGuessRepository, GuessRepository>();
-builder.Services.AddScoped<IOfficialResultRepository, OfficialResultRepository>();
-// Register factories
-builder.Services.AddSingleton<GuessFactory>();
-// Register Services
-builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<ISweepstakesService, SweepstakesService>();
-builder.Services.AddScoped<IGuessService, GuessService>();
-builder.Services.AddScoped<IOfficialResultService, OfficialResultService>();
 
 // Register repositories
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -103,22 +91,14 @@ app.UseMiddleware<IdempotencyActionMiddleware>();
 
 app.UseOutputCache();
 
-// Register endpoints
-app.MapRegisterEndpoint();
-app.MapLoginEndpoint();
-app.MapCreateSweepstakesEndpoint();
-app.MapGetSweepstakesEndpoint();
-app.MapGetSweepstakesMetadataEndpoint();
-app.MapJoinSweepstakesEndpoint();
-app.MapCreateOrUpdateGuessEndpoint();
-app.MapGetLeaderboardEndpoint();
-app.MapCreateOfficialResultEndpoint();
 // Register api/v1 route group and map endpoints under it
 var apiV1 = app.MapGroup("api/v1");
 apiV1.MapRegisterEndpoint();
 apiV1.MapLoginEndpoint();
 apiV1.MapCreateSweepstakesEndpoint();
 apiV1.MapJoinSweepstakesEndpoint();
+apiV1.MapGetSweepstakesEndpoint();
+apiV1.MapGetSweepstakesMetadataEndpoint();
 apiV1.MapCreateOrUpdateGuessEndpoint();
 apiV1.MapGetLeaderboardEndpoint();
 apiV1.MapCreateOfficialResultEndpoint();

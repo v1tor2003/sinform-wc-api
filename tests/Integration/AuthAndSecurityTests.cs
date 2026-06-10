@@ -7,6 +7,10 @@ namespace SinformWcApi.Tests.Integration;
 
 public class AuthAndSecurityTests : IntegrationTestBase
 {
+    public AuthAndSecurityTests(TestcontainersFixture fixture) : base(fixture)
+    {
+    }
+
     [Fact]
     public async Task IT01_MissingApiKey_ShouldReturn401Unauthorized()
     {
