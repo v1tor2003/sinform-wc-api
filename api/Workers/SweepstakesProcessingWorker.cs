@@ -99,6 +99,9 @@ public class SweepstakesProcessingWorker : BackgroundService
                     if (sweep.IncludeThird && 
                         !string.IsNullOrWhiteSpace(guess.Third) && 
                         guess.Third.Equals(officialResult.ThirdPlace, StringComparison.OrdinalIgnoreCase))
+                    {
+                        score += 10;
+                    }
                 }
 
                 participant.TotalScore = score;

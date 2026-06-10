@@ -19,11 +19,19 @@ public static class CreateOfficialResultEndpoint
         [Required(ErrorMessage = "SecondPlace is required.")]
         string SecondPlace,
         string? ThirdPlace);
+    public record Request(string Phase, string FirstPlace, string SecondPlace, string? ThirdPlace);
 
     public static void MapCreateOfficialResultEndpoint(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapPost("/official-results", async (Request request, AppDbContext dbContext) =>
         {
+            if (string.IsNullOrWhiteSpace(request.Phase) || 
+                string.IsNullOrWhiteSpace(request.FirstPlace) || 
+                string.IsNullOrWhiteSpace(request.SecondPlace))
+            {
+                return Results.BadRequest("Phase, FirstPlace, and SecondPlace are required.");
+            }
+
             var result = await dbContext.OfficialPhaseResults.FirstOrDefaultAsync(r => r.Phase == request.Phase);
             if (result == null)
             {
