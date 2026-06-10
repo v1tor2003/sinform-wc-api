@@ -1,0 +1,24 @@
+# IDEs and Editors
+.vs/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+.idea/
+*.iws
+
+# Build outputs
+bin/
+obj/
+publish/
+dist/
+out/
+
+# Local configuration & secrets
+.env
+secrets.json
+
+# Operating System Files
+.DS_Store
+Thumbs.db
