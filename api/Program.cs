@@ -33,7 +33,6 @@ builder.Services.AddStackExchangeRedisCache(options =>
 // Register scoring strategy and rules
 builder.Services.AddSingleton<IScoringStrategy, DefaultScoringStrategy>();
 builder.Services.AddSingleton<IActiveSweepstakesRule, ActiveSweepstakesRule>();
-
 // Register user context
 builder.Services.AddScoped<UserContext>();
 builder.Services.AddScoped<IUserContext>(sp => sp.GetRequiredService<UserContext>());

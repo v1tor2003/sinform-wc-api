@@ -11,6 +11,9 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using Microsoft.Extensions.Caching.Distributed;
+using System.Security.Claims;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace SinformWcApi.Features.Guesses;
@@ -23,19 +26,17 @@ public static class CreateOrUpdateGuessEndpoint
         
         [Required(ErrorMessage = "Second place country is required.")]
         string Second,
-        
         string Third);
 
     public record Request(
         [Required(ErrorMessage = "SweepstakesId is required.")]
         Guid SweepstakesId,
-        
         [Required(ErrorMessage = "FinalTable is required.")]
         FinalTable FinalTable);
-
     public record Response(Guid Id, Guid ParticipantId, string First, string Second, string Third);
-
     [Idempotent]
+    public record FinalTable(string First, string Second, string Third);
+    public record Request(Guid SweepstakesId, FinalTable FinalTable);
     public static void MapCreateOrUpdateGuessEndpoint(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapPost("/guesses", async (
@@ -44,6 +45,25 @@ public static class CreateOrUpdateGuessEndpoint
             IUserContext userContext) =>
         {
             if (!userContext.IsAuthenticated || !userContext.UserId.HasValue)
+            HttpContext httpContext, 
+            IDistributedCache cache) =>
+            // 1. Idempotency validation
+            if (!httpContext.Request.Headers.TryGetValue("Idempotency-Key", out var idempotencyKeyValues) || 
+                string.IsNullOrWhiteSpace(idempotencyKeyValues.ToString()))
+            {
+                throw new DomainException("Idempotency-Key header is required.");
+            }
+
+            var idempotencyKey = idempotencyKeyValues.ToString();
+            var cacheKey = $"idemp:{idempotencyKey}";
+            // Check if request was already processed
+            var cachedJson = await cache.GetStringAsync(cacheKey);
+            if (!string.IsNullOrEmpty(cachedJson))
+                var cachedResponse = JsonSerializer.Deserialize<Response>(cachedJson);
+                return Results.Ok(cachedResponse);
+            // 2. Auth user retrieval
+            var userIdClaim = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userIdClaim == null || !Guid.TryParse(userIdClaim, out var userId))
             {
                 return Results.Unauthorized();
             }
@@ -51,6 +71,7 @@ public static class CreateOrUpdateGuessEndpoint
             var userId = userContext.UserId.Value;
 
             // Find participant record
+            // 3. Find participant record
             var participant = await dbContext.Participants
                 .Include(p => p.Sweepstakes)
                 .FirstOrDefaultAsync(p => p.SweepstakesId == request.SweepstakesId && p.UserId == userId);
@@ -61,12 +82,20 @@ public static class CreateOrUpdateGuessEndpoint
             }
 
             // Verify guesses deadline
+            // 4. Verify guesses deadline
             if (DateTime.UtcNow > participant.Sweepstakes!.GuessesDeadline)
             {
                 throw new DomainException("Guesses deadline has passed.");
             }
 
             // Verify third place requirement
+            // 5. Input validation
+            if (string.IsNullOrWhiteSpace(request.FinalTable.First) || 
+                string.IsNullOrWhiteSpace(request.FinalTable.Second))
+            {
+                throw new DomainException("First and Second place countries are required.");
+            }
+
             if (participant.Sweepstakes.IncludeThird && string.IsNullOrWhiteSpace(request.FinalTable.Third))
             {
                 throw new DomainException("Third place country is required for this sweepstakes.");
@@ -85,6 +114,7 @@ public static class CreateOrUpdateGuessEndpoint
             }
 
             // Upsert Guess
+            // 6. Upsert Guess
             var guess = await dbContext.Guesses.FirstOrDefaultAsync(g => g.ParticipantId == participant.Id);
             var isNew = false;
             
@@ -113,6 +143,12 @@ public static class CreateOrUpdateGuessEndpoint
             await dbContext.SaveChangesAsync();
 
             var response = new Response(guess.Id, guess.ParticipantId, guess.First, guess.Second, guess.Third);
+            // 7. Save to Cache
+            var cacheOptions = new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(24)
+            };
+            await cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(response), cacheOptions);
 
             return isNew 
                 ? Results.Created($"/guesses/{guess.Id}", response)
@@ -125,3 +161,4 @@ public static class CreateOrUpdateGuessEndpoint
     }
 }
 
+        .RequireApiKey();
