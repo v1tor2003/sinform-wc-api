@@ -42,23 +42,19 @@ builder.Services.AddScoped<UserContext>();
 builder.Services.AddScoped<IUserContext>(sp => sp.GetRequiredService<UserContext>());
 // Register native validation
 builder.Services.AddValidation();
-
 // Register repositories
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ISweepstakesRepository, SweepstakesRepository>();
 builder.Services.AddScoped<IParticipantRepository, ParticipantRepository>();
 builder.Services.AddScoped<IGuessRepository, GuessRepository>();
 builder.Services.AddScoped<IOfficialResultRepository, OfficialResultRepository>();
-
 // Register factories
 builder.Services.AddSingleton<GuessFactory>();
-
 // Register Services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ISweepstakesService, SweepstakesService>();
 builder.Services.AddScoped<IGuessService, GuessService>();
 builder.Services.AddScoped<IOfficialResultService, OfficialResultService>();
-
 // Register background worker
 builder.Services.AddHostedService<SweepstakesProcessingWorker>();
 

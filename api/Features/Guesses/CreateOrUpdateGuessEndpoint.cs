@@ -13,6 +13,10 @@ using System.Security.Claims;
 using System.Text.Json;
 using System.Threading.Tasks;
 using SinformWcApi.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
+using SinformWcApi.Entities;
+using SinformWcApi.Exceptions;
+using System.Collections.Generic;
 
 namespace SinformWcApi.Features.Guesses;
 
@@ -24,7 +28,6 @@ public static class CreateOrUpdateGuessEndpoint
         
         [Required(ErrorMessage = "Second place country is required.")]
         string Second,
-        
         string Third);
 
     public record Request(
@@ -36,7 +39,6 @@ public static class CreateOrUpdateGuessEndpoint
     [Idempotent]
     public record FinalTable(string First, string Second, string Third);
     public record Request(Guid SweepstakesId, FinalTable FinalTable);
-        
 
     public static void MapCreateOrUpdateGuessEndpoint(this IEndpointRouteBuilder endpoints)
     {
@@ -48,6 +50,7 @@ public static class CreateOrUpdateGuessEndpoint
             if (!userContext.IsAuthenticated || !userContext.UserId.HasValue)
             HttpContext httpContext, 
             IDistributedCache cache) =>
+            AppDbContext dbContext,
             // 1. Idempotency validation
             if (!httpContext.Request.Headers.TryGetValue("Idempotency-Key", out var idempotencyKeyValues) || 
                 string.IsNullOrWhiteSpace(idempotencyKeyValues.ToString()))
@@ -62,6 +65,9 @@ public static class CreateOrUpdateGuessEndpoint
             if (!string.IsNullOrEmpty(cachedJson))
                 var cachedResponse = JsonSerializer.Deserialize<Response>(cachedJson);
                 return Results.Ok(cachedResponse);
+
+            {
+            }
             // 2. Auth user retrieval
             var userIdClaim = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (userIdClaim == null || !Guid.TryParse(userIdClaim, out var userId))
@@ -76,6 +82,7 @@ public static class CreateOrUpdateGuessEndpoint
             var participant = await dbContext.Participants
                 .Include(p => p.Sweepstakes)
                 .FirstOrDefaultAsync(p => p.SweepstakesId == request.SweepstakesId && p.UserId == userId);
+
             if (participant == null)
             {
                 return Results.Json(new { message = "User is not a participant of this sweepstakes." }, statusCode: StatusCodes.Status403Forbidden);
@@ -98,11 +105,15 @@ public static class CreateOrUpdateGuessEndpoint
             if (countries.Count != countries.Distinct(StringComparer.OrdinalIgnoreCase).Count())
                 throw new DomainException("Countries in the final table must be unique.");
             // Upsert Guess
+
+            {
+            }
             // 6. Upsert Guess
             var guess = await dbContext.Guesses.FirstOrDefaultAsync(g => g.ParticipantId == participant.Id);
             var isNew = false;
             
             if (guess == null)
+            {
                 isNew = true;
                 guess = new Guess
                 {
@@ -115,6 +126,8 @@ public static class CreateOrUpdateGuessEndpoint
                 };
                 dbContext.Guesses.Add(guess);
             else
+            }
+            {
                 guess.First = request.FinalTable.First.Trim();
                 guess.Second = request.FinalTable.Second.Trim();
                 guess.Third = participant.Sweepstakes.IncludeThird ? request.FinalTable.Third.Trim() : string.Empty;
@@ -129,6 +142,7 @@ public static class CreateOrUpdateGuessEndpoint
 
             var response = new Response(guess.Id, guess.ParticipantId, guess.First, guess.Second, guess.Third);
             // 7. Save to Cache
+            }
             var cacheOptions = new DistributedCacheEntryOptions
             {
                 AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(24)
@@ -137,6 +151,7 @@ public static class CreateOrUpdateGuessEndpoint
 
             return isNew 
                 ? Results.Created($"/api/v1/guesses/{guess.Id}", response)
+                ? Results.Created($"/guesses/{guess.Id}", response)
                 : Results.Ok(response);
         })
         .WithName("CreateOrUpdateGuess")
