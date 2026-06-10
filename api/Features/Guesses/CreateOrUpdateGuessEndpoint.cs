@@ -26,6 +26,7 @@ public static class CreateOrUpdateGuessEndpoint
         
         [Required(ErrorMessage = "Second place country is required.")]
         string Second,
+        
         string Third);
 
     public record Request(
@@ -37,6 +38,8 @@ public static class CreateOrUpdateGuessEndpoint
     [Idempotent]
     public record FinalTable(string First, string Second, string Third);
     public record Request(Guid SweepstakesId, FinalTable FinalTable);
+        
+
     public static void MapCreateOrUpdateGuessEndpoint(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapPost("/guesses", async (

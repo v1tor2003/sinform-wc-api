@@ -38,6 +38,7 @@ builder.Services.AddScoped<UserContext>();
 builder.Services.AddScoped<IUserContext>(sp => sp.GetRequiredService<UserContext>());
 // Register native validation
 builder.Services.AddValidation();
+
 // Register background worker
 builder.Services.AddHostedService<SweepstakesProcessingWorker>();
 
