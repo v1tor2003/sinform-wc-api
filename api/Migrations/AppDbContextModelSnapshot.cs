@@ -71,27 +71,15 @@ namespace code.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
-
                     b.Property<DateTime?>("HomologatedAt")
                         .HasColumnType("timestamp with time zone");
-
                     b.Property<bool>("IsHomologated")
                         .HasColumnType("boolean");
-
                     b.Property<string>("SecondPlace")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
                     b.Property<string>("ThirdPlace")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
                     b.HasKey("Phase");
-
                     b.ToTable("OfficialPhaseResults");
                 });
-
             modelBuilder.Entity("SinformWcApi.Entities.Participant", b =>
                 {
                     b.Property<Guid>("Id")
