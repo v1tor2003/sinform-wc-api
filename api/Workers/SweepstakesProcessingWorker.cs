@@ -99,6 +99,9 @@ public class SweepstakesProcessingWorker : BackgroundService
                         score += 10;
                     }
                     if (guess.Second.Equals(officialResult.SecondPlace, StringComparison.OrdinalIgnoreCase))
+                    {
+                        score += 10;
+                    }
                     if (sweep.IncludeThird && 
                         !string.IsNullOrWhiteSpace(guess.Third) && 
                         guess.Third.Equals(officialResult.ThirdPlace, StringComparison.OrdinalIgnoreCase))
