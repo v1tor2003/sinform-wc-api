@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.EntityFrameworkCore;
+using SinformWcApi.Entities;
+using SinformWcApi.Exceptions;
 using SinformWcApi.Contexts;
 using SinformWcApi.Attributes;
 using SinformWcApi.Middleware;
@@ -11,6 +14,7 @@ using System.Linq;
 using Microsoft.Extensions.Caching.Distributed;
 using System.Security.Claims;
 using System.Text.Json;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using SinformWcApi.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -28,6 +32,7 @@ public static class CreateOrUpdateGuessEndpoint
         
         [Required(ErrorMessage = "Second place country is required.")]
         string Second,
+        
         string Third);
 
     public record Request(
@@ -39,7 +44,10 @@ public static class CreateOrUpdateGuessEndpoint
     [Idempotent]
     public record FinalTable(string First, string Second, string Third);
     public record Request(Guid SweepstakesId, FinalTable FinalTable);
+        
 
+
+    [Idempotent]
     public static void MapCreateOrUpdateGuessEndpoint(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapPost("/guesses", async (
@@ -65,9 +73,6 @@ public static class CreateOrUpdateGuessEndpoint
             if (!string.IsNullOrEmpty(cachedJson))
                 var cachedResponse = JsonSerializer.Deserialize<Response>(cachedJson);
                 return Results.Ok(cachedResponse);
-
-            {
-            }
             // 2. Auth user retrieval
             var userIdClaim = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (userIdClaim == null || !Guid.TryParse(userIdClaim, out var userId))
@@ -89,6 +94,7 @@ public static class CreateOrUpdateGuessEndpoint
             }
             // Verify guesses deadline
             // 4. Verify guesses deadline
+
             if (DateTime.UtcNow > participant.Sweepstakes!.GuessesDeadline)
                 throw new DomainException("Guesses deadline has passed.");
             // Verify third place requirement
@@ -96,6 +102,8 @@ public static class CreateOrUpdateGuessEndpoint
             if (string.IsNullOrWhiteSpace(request.FinalTable.First) || 
                 string.IsNullOrWhiteSpace(request.FinalTable.Second))
                 throw new DomainException("First and Second place countries are required.");
+            }
+
             if (participant.Sweepstakes.IncludeThird && string.IsNullOrWhiteSpace(request.FinalTable.Third))
                 throw new DomainException("Third place country is required for this sweepstakes.");
             // Verify unique countries in selection
@@ -109,6 +117,7 @@ public static class CreateOrUpdateGuessEndpoint
             {
             }
             // 6. Upsert Guess
+            // Upsert Guess
             var guess = await dbContext.Guesses.FirstOrDefaultAsync(g => g.ParticipantId == participant.Id);
             var isNew = false;
             

@@ -7,6 +7,7 @@ using SinformWcApi.Entities;
 using SinformWcApi.Contexts;
 using SinformWcApi.Validation;
 using SinformWcApi.Services.Impls;
+using SinformWcApi.Services;
 using SinformWcApi.Middleware;
 using System;
 using System.ComponentModel.DataAnnotations;
@@ -52,6 +53,7 @@ public static class CreateSweepstakesEndpoint
     public static void MapCreateSweepstakesEndpoint(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapPost("/sweepstakes", async (Request request, ISweepstakesService sweepstakesService, IUserContext userContext) =>
+        endpoints.MapPost("/sweepstakes", async (Request request, AppDbContext dbContext, IUserContext userContext, IActiveSweepstakesRule activeSweepstakesRule) =>
         {
             if (!userContext.IsAuthenticated || !userContext.UserId.HasValue)
             {
@@ -68,8 +70,28 @@ public static class CreateSweepstakesEndpoint
                 request.IncludeThird);
 
             var response = sweepstakes.ToResponse();
-
             return Results.Created($"/api/v1/sweepstakes/{sweepstakes.Id}", response);
+            var userId = userContext.UserId.Value;
+            // Rule: 1 active sweepstakes per creator
+            var activeCount = await dbContext.Sweepstakes.CountAsync(s => s.CreatorId == userId && s.IsActive);
+            activeSweepstakesRule.Validate(activeCount);
+            // Generate invite code
+            string inviteCode;
+            do
+            {
+                inviteCode = GenerateInviteCode();
+            } while (await dbContext.Sweepstakes.AnyAsync(s => s.InviteCode == inviteCode));
+            var sweepstakes = request.ToEntity(inviteCode, userId);
+            var participant = new Participant
+                Sweepstakes = sweepstakes,
+                UserId = userId,
+                TotalScore = 0,
+                JoinedAt = DateTime.UtcNow
+            };
+            dbContext.Sweepstakes.Add(sweepstakes);
+            dbContext.Participants.Add(participant);
+            await dbContext.SaveChangesAsync();
+            return Results.Created($"/sweepstakes/{sweepstakes.Id}", response);
         })
         .WithName("CreateSweepstakes")
         .WithTags("Sweepstakes")
@@ -93,3 +115,38 @@ public static class CreateSweepstakesMapper
             sweepstakes.IsActive);
     }
 }
+
+public static class CreateSweepstakesMapper
+{
+    public static Entities.Sweepstakes ToEntity(this CreateSweepstakesEndpoint.Request request, string inviteCode, Guid creatorId)
+    {
+        return new Entities.Sweepstakes
+        {
+            Name = request.Name,
+            Description = request.Description ?? string.Empty,
+            Phase = request.Phase,
+            InviteCode = inviteCode,
+            CreatorId = creatorId,
+            QualifiedCount = request.QualifiedCount,
+            IncludeThird = request.IncludeThird,
+            GuessesDeadline = request.GuessesDeadline.ToUniversalTime(),
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow
+        };
+    }
+
+    public static CreateSweepstakesEndpoint.Response ToResponse(this Entities.Sweepstakes sweepstakes)
+    {
+        return new CreateSweepstakesEndpoint.Response(
+            sweepstakes.Id,
+            sweepstakes.Name,
+            sweepstakes.Description,
+            sweepstakes.Phase,
+            sweepstakes.InviteCode,
+            sweepstakes.GuessesDeadline,
+            sweepstakes.QualifiedCount,
+            sweepstakes.IncludeThird,
+            sweepstakes.IsActive);
+    }
+}
+

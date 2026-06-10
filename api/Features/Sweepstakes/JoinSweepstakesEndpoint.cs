@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.EntityFrameworkCore;
+using SinformWcApi.Entities;
 using SinformWcApi.Contexts;
 using SinformWcApi.Middleware;
 using SinformWcApi.Services.Impls;
@@ -33,6 +35,7 @@ public static class JoinSweepstakesEndpoint
         endpoints.MapPost("/sweepstakes/join", async (Request request, HttpContext httpContext, AppDbContext dbContext) =>
             var userIdClaim = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (userIdClaim == null || !Guid.TryParse(userIdClaim, out var userId))
+        endpoints.MapPost("/sweepstakes/join", async (Request request, AppDbContext dbContext, IUserContext userContext) =>
             {
                 return Results.Unauthorized();
             }
@@ -77,3 +80,4 @@ public static class JoinSweepstakesEndpoint
         .RequireApiKey();
     }
 }
+

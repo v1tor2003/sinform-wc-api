@@ -13,6 +13,7 @@ using SinformWcApi.Contexts;
 using SinformWcApi.Repositories.Interfaces;
 using SinformWcApi.Repositories.Impls;
 using SinformWcApi.Factories;
+using SinformWcApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -55,6 +56,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ISweepstakesService, SweepstakesService>();
 builder.Services.AddScoped<IGuessService, GuessService>();
 builder.Services.AddScoped<IOfficialResultService, OfficialResultService>();
+
 // Register background worker
 builder.Services.AddHostedService<SweepstakesProcessingWorker>();
 
