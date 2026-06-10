@@ -6,7 +6,6 @@ using SinformWcApi.Middleware;
 using SinformWcApi.Contexts;
 using System;
 using System.Linq;
-using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace SinformWcApi.Features.Sweepstakes;
