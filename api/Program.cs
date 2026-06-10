@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using SinformWcApi.Data;
 using SinformWcApi.Features.Auth;
+using SinformWcApi.Features.Guesses;
 using SinformWcApi.Features.Sweepstakes;
 using SinformWcApi.Middleware;
 
@@ -13,6 +14,10 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // Configure caching services
 builder.Services.AddOutputCache();
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration.GetConnectionString("RedisConnection");
+});
 
 // Add services to the container.
 builder.Services.AddOpenApi();
@@ -44,6 +49,7 @@ app.MapCreateSweepstakesEndpoint();
 app.MapGetSweepstakesEndpoint();
 app.MapGetSweepstakesMetadataEndpoint();
 app.MapJoinSweepstakesEndpoint();
+app.MapCreateOrUpdateGuessEndpoint();
 
 app.MapGet("/health-check", () => Results.Ok("OK"))
    .WithName("HealthCheck");

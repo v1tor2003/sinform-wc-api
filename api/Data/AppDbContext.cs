@@ -12,6 +12,7 @@ public class AppDbContext : DbContext
     public DbSet<User> Users => Set<User>();
     public DbSet<Sweepstakes> Sweepstakes => Set<Sweepstakes>();
     public DbSet<Participant> Participants => Set<Participant>();
+    public DbSet<Guess> Guesses => Set<Guess>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -58,6 +59,21 @@ public class AppDbContext : DbContext
             entity.HasOne(e => e.User)
                   .WithMany()
                   .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Guess>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.First).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Second).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Third).HasMaxLength(100);
+
+            entity.HasIndex(e => e.ParticipantId).IsUnique();
+
+            entity.HasOne(e => e.Participant)
+                  .WithOne()
+                  .HasForeignKey<Guess>(e => e.ParticipantId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
     }
