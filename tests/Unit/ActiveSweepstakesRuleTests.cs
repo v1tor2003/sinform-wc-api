@@ -2,7 +2,7 @@ using SinformWcApi.Exceptions;
 using SinformWcApi.Services;
 using Xunit;
 
-namespace SinformWcApi.Tests;
+namespace SinformWcApi.Tests.Unit;
 
 public class ActiveSweepstakesRuleTests
 {

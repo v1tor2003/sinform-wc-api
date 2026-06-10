@@ -15,7 +15,7 @@ using System.Net.Http.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SinformWcApi.Tests;
+namespace SinformWcApi.Tests.Integration;
 
 public class IntegrationTestBase : IDisposable
 {
@@ -54,6 +54,14 @@ public class IntegrationTestBase : IDisposable
                     {
                         options.UseSqlite(_connection);
                     });
+
+                    // Remove existing IDistributedCache registration
+                    var distributedCacheDescriptors = services.Where(
+                        d => d.ServiceType == typeof(IDistributedCache)).ToList();
+                    foreach (var desc in distributedCacheDescriptors)
+                    {
+                        services.Remove(desc);
+                    }
 
                     // Add Memory cache to replace Redis IDistributedCache
                     services.AddDistributedMemoryCache();

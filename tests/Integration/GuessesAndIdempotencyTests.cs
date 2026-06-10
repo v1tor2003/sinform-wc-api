@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
-namespace SinformWcApi.Tests;
+namespace SinformWcApi.Tests.Integration;
 
 public class GuessesAndIdempotencyTests : IntegrationTestBase
 {

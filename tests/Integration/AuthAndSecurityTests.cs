@@ -3,7 +3,7 @@ using System.Net;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace SinformWcApi.Tests;
+namespace SinformWcApi.Tests.Integration;
 
 public class AuthAndSecurityTests : IntegrationTestBase
 {
