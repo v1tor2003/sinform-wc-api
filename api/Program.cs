@@ -7,12 +7,16 @@ using SinformWcApi.Features.OfficialResults;
 using SinformWcApi.Features.Sweepstakes;
 using SinformWcApi.Middleware;
 using SinformWcApi.Workers;
+using SinformWcApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add database context
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+if (!builder.Environment.IsEnvironment("Testing"))
+{
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+}
 
 // Configure caching services
 builder.Services.AddOutputCache();
@@ -24,6 +28,10 @@ builder.Services.AddStackExchangeRedisCache(options =>
 {
     options.Configuration = builder.Configuration.GetConnectionString("RedisConnection");
 });
+
+// Register scoring strategy and rules
+builder.Services.AddSingleton<IScoringStrategy, DefaultScoringStrategy>();
+builder.Services.AddSingleton<IActiveSweepstakesRule, ActiveSweepstakesRule>();
 
 // Register background worker
 builder.Services.AddHostedService<SweepstakesProcessingWorker>();
@@ -66,3 +74,5 @@ app.MapGet("/health-check", () => Results.Ok("OK"))
    .WithName("HealthCheck");
 
 app.Run();
+
+public partial class Program { }

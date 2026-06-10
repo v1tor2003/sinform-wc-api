@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using SinformWcApi.Entities;
+using SinformWcApi.Services;
 using System;
 using System.Linq;
 using System.Threading;
@@ -48,6 +49,7 @@ public class SweepstakesProcessingWorker : BackgroundService
         using var scope = _serviceProvider.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var cacheStore = scope.ServiceProvider.GetRequiredService<IOutputCacheStore>();
+        var scoringStrategy = scope.ServiceProvider.GetRequiredService<IScoringStrategy>();
 
         var now = DateTime.UtcNow;
 
@@ -85,24 +87,7 @@ public class SweepstakesProcessingWorker : BackgroundService
                 var guess = await dbContext.Guesses
                     .FirstOrDefaultAsync(g => g.ParticipantId == participant.Id, stoppingToken);
 
-                int score = 0;
-                if (guess != null)
-                {
-                    if (guess.First.Equals(officialResult.FirstPlace, StringComparison.OrdinalIgnoreCase))
-                    {
-                        score += 10;
-                    }
-                    if (guess.Second.Equals(officialResult.SecondPlace, StringComparison.OrdinalIgnoreCase))
-                    {
-                        score += 10;
-                    }
-                    if (sweep.IncludeThird && 
-                        !string.IsNullOrWhiteSpace(guess.Third) && 
-                        guess.Third.Equals(officialResult.ThirdPlace, StringComparison.OrdinalIgnoreCase))
-                    {
-                        score += 10;
-                    }
-                }
+                int score = scoringStrategy.CalculateScore(guess, officialResult, sweep.IncludeThird);
 
                 participant.TotalScore = score;
             }

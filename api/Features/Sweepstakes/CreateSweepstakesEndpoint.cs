@@ -10,6 +10,8 @@ using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
+using SinformWcApi.Services;
+
 namespace SinformWcApi.Features.Sweepstakes;
 
 public static class CreateSweepstakesEndpoint
@@ -35,7 +37,7 @@ public static class CreateSweepstakesEndpoint
 
     public static void MapCreateSweepstakesEndpoint(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapPost("/sweepstakes", async (Request request, HttpContext httpContext, AppDbContext dbContext) =>
+        endpoints.MapPost("/sweepstakes", async (Request request, HttpContext httpContext, AppDbContext dbContext, IActiveSweepstakesRule activeSweepstakesRule) =>
         {
             var userIdClaim = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (userIdClaim == null || !Guid.TryParse(userIdClaim, out var userId))
@@ -65,11 +67,8 @@ public static class CreateSweepstakesEndpoint
             }
 
             // Rule: 1 active sweepstakes per creator
-            var hasActive = await dbContext.Sweepstakes.AnyAsync(s => s.CreatorId == userId && s.IsActive);
-            if (hasActive)
-            {
-                throw new DomainException("User already has an active sweepstakes.");
-            }
+            var activeCount = await dbContext.Sweepstakes.CountAsync(s => s.CreatorId == userId && s.IsActive);
+            activeSweepstakesRule.Validate(activeCount);
 
             // Generate invite code
             string inviteCode;
