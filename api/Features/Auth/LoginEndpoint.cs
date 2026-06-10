@@ -22,14 +22,12 @@ public static class LoginEndpoint
 
             var emailNormalized = request.Email.Trim().ToLower();
 
-            // Find user
             var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email == emailNormalized);
             if (user == null)
             {
                 return Results.Unauthorized();
             }
 
-            // Verify password
             var isValid = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
             if (!isValid)
             {

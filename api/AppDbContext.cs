@@ -10,6 +10,8 @@ public class AppDbContext : DbContext
     }
 
     public DbSet<User> Users => Set<User>();
+    public DbSet<Sweepstakes> Sweepstakes => Set<Sweepstakes>();
+    public DbSet<Participant> Participants => Set<Participant>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -25,6 +27,38 @@ public class AppDbContext : DbContext
 
             entity.HasIndex(e => e.Email).IsUnique();
             entity.HasIndex(e => e.ApiKey).IsUnique();
+        });
+
+        modelBuilder.Entity<Sweepstakes>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(150);
+            entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.Phase).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.InviteCode).IsRequired().HasMaxLength(6);
+            entity.HasIndex(e => e.InviteCode).IsUnique();
+
+            entity.HasOne(e => e.Creator)
+                  .WithMany()
+                  .HasForeignKey(e => e.CreatorId)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<Participant>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            
+            entity.HasIndex(e => new { e.SweepstakesId, e.UserId }).IsUnique();
+
+            entity.HasOne(e => e.Sweepstakes)
+                  .WithMany(s => s.Participants)
+                  .HasForeignKey(e => e.SweepstakesId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.User)
+                  .WithMany()
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

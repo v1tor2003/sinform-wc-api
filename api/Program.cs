@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using SinformWcApi;
 using SinformWcApi.Features.Auth;
+using SinformWcApi.Features.Sweepstakes;
 using SinformWcApi.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,6 +19,9 @@ builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks();
 
 var app = builder.Build();
+
+// Global exception handling middleware (first in pipeline)
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -36,6 +40,7 @@ app.UseOutputCache();
 // Register endpoints
 app.MapRegisterEndpoint();
 app.MapLoginEndpoint();
+app.MapCreateSweepstakesEndpoint();
 
 app.MapGet("/health-check", () => Results.Ok("OK"))
    .WithName("HealthCheck");

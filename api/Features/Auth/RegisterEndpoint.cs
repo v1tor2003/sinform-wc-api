@@ -26,17 +26,14 @@ public static class RegisterEndpoint
 
             var emailNormalized = request.Email.Trim().ToLower();
 
-            // Check if email already exists
             var exists = await dbContext.Users.AnyAsync(u => u.Email == emailNormalized);
             if (exists)
             {
                 return Results.BadRequest("Email is already registered.");
             }
 
-            // Secure hash with BCrypt
             var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
-            // Generate unique api key
             var apiKey = "usr_live_" + Guid.NewGuid().ToString("N");
 
             var newUser = new User
