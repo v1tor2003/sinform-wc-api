@@ -1,7 +1,8 @@
 using SinformWcApi.Entities;
 using System;
+using SinformWcApi.Services.Interfaces;
 
-namespace SinformWcApi.Services;
+namespace SinformWcApi.Services.Impls;
 
 public class DefaultScoringStrategy : IScoringStrategy
 {

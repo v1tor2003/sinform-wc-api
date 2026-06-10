@@ -1,6 +1,6 @@
 using SinformWcApi.Entities;
 
-namespace SinformWcApi.Services;
+namespace SinformWcApi.Services.Interfaces;
 
 public interface IScoringStrategy
 {

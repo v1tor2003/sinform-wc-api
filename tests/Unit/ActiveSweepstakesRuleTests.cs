@@ -1,5 +1,6 @@
 using SinformWcApi.Exceptions;
-using SinformWcApi.Services;
+using SinformWcApi.Services.Interfaces;
+using SinformWcApi.Services.Impls;
 using Xunit;
 
 namespace SinformWcApi.Tests.Unit;

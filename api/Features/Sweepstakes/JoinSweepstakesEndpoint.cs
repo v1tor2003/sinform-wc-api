@@ -1,15 +1,15 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.EntityFrameworkCore;
-using SinformWcApi.Entities;
 using SinformWcApi.Contexts;
 using SinformWcApi.Middleware;
+using SinformWcApi.Services.Impls;
 using System;
 using System.ComponentModel.DataAnnotations;
 using SinformWcApi.Exceptions;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using SinformWcApi.Services.Interfaces;
 
 namespace SinformWcApi.Features.Sweepstakes;
 
@@ -25,7 +25,7 @@ public static class JoinSweepstakesEndpoint
 
     public static void MapJoinSweepstakesEndpoint(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapPost("/sweepstakes/join", async (Request request, AppDbContext dbContext, IUserContext userContext) =>
+        endpoints.MapPost("/sweepstakes/join", async (Request request, ISweepstakesService sweepstakesService, IUserContext userContext) =>
         {
             if (!userContext.IsAuthenticated || !userContext.UserId.HasValue)
         endpoints.MapPost("/sweepstakes/join", async (Request request, HttpContext httpContext, AppDbContext dbContext) =>
@@ -42,38 +42,28 @@ public static class JoinSweepstakesEndpoint
             }
 
             var inviteCodeNormalized = request.InviteCode.Trim().ToUpper();
-
             // Find sweepstakes
             var sweepstakes = await dbContext.Sweepstakes
                 .FirstOrDefaultAsync(s => s.InviteCode == inviteCodeNormalized);
-
             if (sweepstakes == null || !sweepstakes.IsActive)
-            {
                 return Results.NotFound("Sweepstakes not found or is closed.");
-            }
-
             // Check if already a participant
             var isAlreadyParticipant = await dbContext.Participants
                 .AnyAsync(p => p.SweepstakesId == sweepstakes.Id && p.UserId == userId);
-
             if (isAlreadyParticipant)
-            {
                 return Results.BadRequest("User is already a participant of this sweepstakes.");
-            }
-
             // Add participant
             var participant = new Participant
-            {
                 SweepstakesId = sweepstakes.Id,
                 UserId = userId,
                 TotalScore = 0,
                 JoinedAt = DateTime.UtcNow
             };
-
             dbContext.Participants.Add(participant);
             await dbContext.SaveChangesAsync();
-
             var response = new Response(participant.Id, sweepstakes.Id, sweepstakes.Name);
+            var participant = await sweepstakesService.JoinAsync(userContext.UserId.Value, request.InviteCode);
+            var response = new Response(participant.Id, participant.SweepstakesId, participant.Sweepstakes!.Name);
             return Results.Ok(response);
         })
         .WithName("JoinSweepstakes")
@@ -81,4 +71,3 @@ public static class JoinSweepstakesEndpoint
         .RequireApiKey();
     }
 }
-

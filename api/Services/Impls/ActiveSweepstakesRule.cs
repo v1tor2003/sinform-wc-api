@@ -1,6 +1,7 @@
 using SinformWcApi.Exceptions;
+using SinformWcApi.Services.Interfaces;
 
-namespace SinformWcApi.Services;
+namespace SinformWcApi.Services.Impls;
 
 public class ActiveSweepstakesRule : IActiveSweepstakesRule
 {

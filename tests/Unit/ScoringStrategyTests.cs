@@ -1,5 +1,6 @@
 using SinformWcApi.Entities;
-using SinformWcApi.Services;
+using SinformWcApi.Services.Interfaces;
+using SinformWcApi.Services.Impls;
 using System;
 using Xunit;
 

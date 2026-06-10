@@ -5,8 +5,10 @@ using Microsoft.EntityFrameworkCore;
 using SinformWcApi.Data;
 using SinformWcApi.Entities;
 using System;
+using SinformWcApi.Services.Impls;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
+using SinformWcApi.Services.Interfaces;
 
 namespace SinformWcApi.Features.Auth;
 
@@ -24,36 +26,12 @@ public static class RegisterEndpoint
 
     public static void MapRegisterEndpoint(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapPost("/auth/register", async (Request request, AppDbContext dbContext) =>
+        endpoints.MapPost("/auth/register", async (Request request, IAuthService authService) =>
         {
-            var emailNormalized = request.Email.Trim().ToLower();
-
-            var exists = await dbContext.Users.AnyAsync(u => u.Email == emailNormalized);
-            if (exists)
-            {
-                return Results.BadRequest("Email is already registered.");
-            }
-
-            var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
-
-            var apiKey = "usr_live_" + Guid.NewGuid().ToString("N");
-
-            var newUser = new User
-            {
-                Name = request.Name,
-                Email = emailNormalized,
-                PasswordHash = passwordHash,
-                ApiKey = apiKey,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            dbContext.Users.Add(newUser);
-            await dbContext.SaveChangesAsync();
-
-            return Results.Created($"/users/{newUser.Id}", new Response("User registered successfully."));
+            var newUser = await authService.RegisterAsync(request.Name, request.Email, request.Password);
+            return Results.Created($"/api/v1/users/{newUser.Id}", new Response("User registered successfully."));
         })
         .WithName("RegisterUser")
         .WithTags("Auth");
     }
 }
-

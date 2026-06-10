@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.EntityFrameworkCore;
-using SinformWcApi.Entities;
+using SinformWcApi.Services.Impls;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
+using SinformWcApi.Services.Interfaces;
 
 namespace SinformWcApi.Features.OfficialResults;
 
@@ -23,36 +23,12 @@ public static class CreateOfficialResultEndpoint
 
     public static void MapCreateOfficialResultEndpoint(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapPost("/official-results", async (Request request, AppDbContext dbContext) =>
+        endpoints.MapPost("/official-results", async (Request request, IOfficialResultService officialResultService) =>
         {
-            var result = await dbContext.OfficialPhaseResults.FirstOrDefaultAsync(r => r.Phase == request.Phase);
-            if (result == null)
-            {
-                result = new OfficialPhaseResult
-                {
-                    Phase = request.Phase,
-                    FirstPlace = request.FirstPlace.Trim(),
-                    SecondPlace = request.SecondPlace.Trim(),
-                    ThirdPlace = request.ThirdPlace?.Trim() ?? string.Empty,
-                    IsHomologated = true,
-                    HomologatedAt = DateTime.UtcNow
-                };
-                dbContext.OfficialPhaseResults.Add(result);
-            }
-            else
-            {
-                result.FirstPlace = request.FirstPlace.Trim();
-                result.SecondPlace = request.SecondPlace.Trim();
-                result.ThirdPlace = request.ThirdPlace?.Trim() ?? string.Empty;
-                result.IsHomologated = true;
-                result.HomologatedAt = DateTime.UtcNow;
-            }
-
-            await dbContext.SaveChangesAsync();
+            var result = await officialResultService.CreateOrUpdateAsync(request.Phase, request.FirstPlace, request.SecondPlace, request.ThirdPlace);
             return Results.Ok(result);
         })
         .WithName("CreateOfficialResult")
         .WithTags("OfficialResults");
     }
 }
-

@@ -119,7 +119,8 @@ public class IntegrationTestBase : IDisposable
 
     protected async Task<HttpResponseMessage> PostJsonAsync<T>(string url, T content, string? apiKey = null, string? idempotencyKey = null)
     {
-        var request = new HttpRequestMessage(HttpMethod.Post, url)
+        var targetUrl = url.StartsWith("/api/v1") ? url : $"/api/v1{url}";
+        var request = new HttpRequestMessage(HttpMethod.Post, targetUrl)
         {
             Content = JsonContent.Create(content)
         };
@@ -139,7 +140,8 @@ public class IntegrationTestBase : IDisposable
 
     protected async Task<HttpResponseMessage> GetAsync(string url, string? apiKey = null)
     {
-        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        var targetUrl = url.StartsWith("/api/v1") ? url : $"/api/v1{url}";
+        var request = new HttpRequestMessage(HttpMethod.Get, targetUrl);
 
         if (apiKey != null)
         {

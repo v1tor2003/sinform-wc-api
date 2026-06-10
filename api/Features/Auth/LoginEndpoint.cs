@@ -3,8 +3,10 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using SinformWcApi.Data;
+using SinformWcApi.Services.Impls;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
+using SinformWcApi.Services.Interfaces;
 
 namespace SinformWcApi.Features.Auth;
 
@@ -20,26 +22,17 @@ public static class LoginEndpoint
 
     public static void MapLoginEndpoint(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapPost("/auth/login", async (Request request, AppDbContext dbContext) =>
+        endpoints.MapPost("/auth/login", async (Request request, IAuthService authService) =>
         {
-            var emailNormalized = request.Email.Trim().ToLower();
-
-            var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email == emailNormalized);
-            if (user == null)
+            var apiKey = await authService.LoginAsync(request.Email, request.Password);
+            if (apiKey == null)
             {
                 return Results.Unauthorized();
             }
 
-            var isValid = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
-            if (!isValid)
-            {
-                return Results.Unauthorized();
-            }
-
-            return Results.Ok(new Response(user.ApiKey));
+            return Results.Ok(new Response(apiKey));
         })
         .WithName("LoginUser")
         .WithTags("Auth");
     }
 }
-

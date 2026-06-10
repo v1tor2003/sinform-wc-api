@@ -7,8 +7,12 @@ using SinformWcApi.Features.OfficialResults;
 using SinformWcApi.Features.Sweepstakes;
 using SinformWcApi.Middleware;
 using SinformWcApi.Workers;
-using SinformWcApi.Services;
+using SinformWcApi.Services.Interfaces;
+using SinformWcApi.Services.Impls;
 using SinformWcApi.Contexts;
+using SinformWcApi.Repositories.Interfaces;
+using SinformWcApi.Repositories.Impls;
+using SinformWcApi.Factories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,6 +42,22 @@ builder.Services.AddScoped<UserContext>();
 builder.Services.AddScoped<IUserContext>(sp => sp.GetRequiredService<UserContext>());
 // Register native validation
 builder.Services.AddValidation();
+
+// Register repositories
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<ISweepstakesRepository, SweepstakesRepository>();
+builder.Services.AddScoped<IParticipantRepository, ParticipantRepository>();
+builder.Services.AddScoped<IGuessRepository, GuessRepository>();
+builder.Services.AddScoped<IOfficialResultRepository, OfficialResultRepository>();
+
+// Register factories
+builder.Services.AddSingleton<GuessFactory>();
+
+// Register Services
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ISweepstakesService, SweepstakesService>();
+builder.Services.AddScoped<IGuessService, GuessService>();
+builder.Services.AddScoped<IOfficialResultService, OfficialResultService>();
 
 // Register background worker
 builder.Services.AddHostedService<SweepstakesProcessingWorker>();
@@ -79,6 +99,15 @@ app.MapJoinSweepstakesEndpoint();
 app.MapCreateOrUpdateGuessEndpoint();
 app.MapGetLeaderboardEndpoint();
 app.MapCreateOfficialResultEndpoint();
+// Register api/v1 route group and map endpoints under it
+var apiV1 = app.MapGroup("api/v1");
+apiV1.MapRegisterEndpoint();
+apiV1.MapLoginEndpoint();
+apiV1.MapCreateSweepstakesEndpoint();
+apiV1.MapJoinSweepstakesEndpoint();
+apiV1.MapCreateOrUpdateGuessEndpoint();
+apiV1.MapGetLeaderboardEndpoint();
+apiV1.MapCreateOfficialResultEndpoint();
 
 app.MapGet("/health-check", () => Results.Ok("OK"))
    .WithName("HealthCheck");
@@ -86,3 +115,4 @@ app.MapGet("/health-check", () => Results.Ok("OK"))
 app.Run();
 
 public partial class Program { }
+
