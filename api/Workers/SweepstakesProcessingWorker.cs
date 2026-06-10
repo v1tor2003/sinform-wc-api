@@ -88,6 +88,18 @@ public class SweepstakesProcessingWorker : BackgroundService
                     .FirstOrDefaultAsync(g => g.ParticipantId == participant.Id, stoppingToken);
 
                 int score = scoringStrategy.CalculateScore(guess, officialResult, sweep.IncludeThird);
+                int score = 0;
+                if (guess != null)
+                {
+                    if (guess.First.Equals(officialResult.FirstPlace, StringComparison.OrdinalIgnoreCase))
+                    {
+                        score += 10;
+                    }
+                    if (guess.Second.Equals(officialResult.SecondPlace, StringComparison.OrdinalIgnoreCase))
+                    if (sweep.IncludeThird && 
+                        !string.IsNullOrWhiteSpace(guess.Third) && 
+                        guess.Third.Equals(officialResult.ThirdPlace, StringComparison.OrdinalIgnoreCase))
+                }
 
                 participant.TotalScore = score;
             }
