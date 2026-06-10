@@ -44,6 +44,8 @@ public class ExceptionHandlingMiddleware
         var statusCode = exception switch
         {
             DomainException => StatusCodes.Status400BadRequest,
+            NotFoundException => StatusCodes.Status404NotFound,
+            ForbiddenException => StatusCodes.Status403Forbidden,
             _ => StatusCodes.Status500InternalServerError
         };
 

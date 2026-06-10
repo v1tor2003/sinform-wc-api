@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
-using SinformWcApi;
+using SinformWcApi.Data;
 using SinformWcApi.Features.Auth;
 using SinformWcApi.Features.Sweepstakes;
 using SinformWcApi.Middleware;
@@ -41,6 +41,8 @@ app.UseOutputCache();
 app.MapRegisterEndpoint();
 app.MapLoginEndpoint();
 app.MapCreateSweepstakesEndpoint();
+app.MapGetSweepstakesEndpoint();
+app.MapGetSweepstakesMetadataEndpoint();
 
 app.MapGet("/health-check", () => Results.Ok("OK"))
    .WithName("HealthCheck");

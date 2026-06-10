@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SinformWcApi.Entities;
 
-namespace SinformWcApi;
+namespace SinformWcApi.Data;
 
 public class AppDbContext : DbContext
 {
@@ -47,7 +47,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Participant>(entity =>
         {
             entity.HasKey(e => e.Id);
-            
+
             entity.HasIndex(e => new { e.SweepstakesId, e.UserId }).IsUnique();
 
             entity.HasOne(e => e.Sweepstakes)
