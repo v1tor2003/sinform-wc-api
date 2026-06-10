@@ -43,6 +43,7 @@ app.MapLoginEndpoint();
 app.MapCreateSweepstakesEndpoint();
 app.MapGetSweepstakesEndpoint();
 app.MapGetSweepstakesMetadataEndpoint();
+app.MapJoinSweepstakesEndpoint();
 
 app.MapGet("/health-check", () => Results.Ok("OK"))
    .WithName("HealthCheck");
