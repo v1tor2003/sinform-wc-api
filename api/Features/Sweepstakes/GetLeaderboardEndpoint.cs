@@ -67,4 +67,3 @@ public static class GetLeaderboardEndpoint
             .Tag("sb-leaderboard"));
     }
 }
-

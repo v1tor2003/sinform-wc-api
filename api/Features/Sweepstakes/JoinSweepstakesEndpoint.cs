@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.EntityFrameworkCore;
-using SinformWcApi.Entities;
 using SinformWcApi.Contexts;
 using SinformWcApi.Middleware;
 using SinformWcApi.Services.Impls;
@@ -59,9 +57,6 @@ public static class JoinSweepstakesEndpoint
                 return Results.BadRequest("User is already a participant of this sweepstakes.");
             // Add participant
             var participant = new Participant
-
-            {
-            }
                 SweepstakesId = sweepstakes.Id,
                 UserId = userId,
                 TotalScore = 0,
@@ -72,7 +67,6 @@ public static class JoinSweepstakesEndpoint
             var response = new Response(participant.Id, sweepstakes.Id, sweepstakes.Name);
             var participant = await sweepstakesService.JoinAsync(userContext.UserId.Value, request.InviteCode);
             var response = new Response(participant.Id, participant.SweepstakesId, participant.Sweepstakes!.Name);
-
             return Results.Ok(response);
         })
         .WithName("JoinSweepstakes")
@@ -80,4 +74,3 @@ public static class JoinSweepstakesEndpoint
         .RequireApiKey();
     }
 }
-

@@ -92,6 +92,7 @@ public static class CreateSweepstakesEndpoint
             dbContext.Participants.Add(participant);
             await dbContext.SaveChangesAsync();
             return Results.Created($"/sweepstakes/{sweepstakes.Id}", response);
+
         })
         .WithName("CreateSweepstakes")
         .WithTags("Sweepstakes")
@@ -118,23 +119,6 @@ public static class CreateSweepstakesMapper
 
 public static class CreateSweepstakesMapper
 {
-    public static Entities.Sweepstakes ToEntity(this CreateSweepstakesEndpoint.Request request, string inviteCode, Guid creatorId)
-    {
-        return new Entities.Sweepstakes
-        {
-            Name = request.Name,
-            Description = request.Description ?? string.Empty,
-            Phase = request.Phase,
-            InviteCode = inviteCode,
-            CreatorId = creatorId,
-            QualifiedCount = request.QualifiedCount,
-            IncludeThird = request.IncludeThird,
-            GuessesDeadline = request.GuessesDeadline.ToUniversalTime(),
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow
-        };
-    }
-
     public static CreateSweepstakesEndpoint.Response ToResponse(this Entities.Sweepstakes sweepstakes)
     {
         return new CreateSweepstakesEndpoint.Response(
@@ -149,4 +133,3 @@ public static class CreateSweepstakesMapper
             sweepstakes.IsActive);
     }
 }
-

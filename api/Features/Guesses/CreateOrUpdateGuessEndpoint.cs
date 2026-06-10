@@ -1,9 +1,6 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.EntityFrameworkCore;
-using SinformWcApi.Entities;
-using SinformWcApi.Exceptions;
 using SinformWcApi.Contexts;
 using SinformWcApi.Attributes;
 using SinformWcApi.Middleware;
@@ -20,7 +17,6 @@ using SinformWcApi.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using SinformWcApi.Entities;
 using SinformWcApi.Exceptions;
-using System.Collections.Generic;
 
 namespace SinformWcApi.Features.Guesses;
 
@@ -87,14 +83,12 @@ public static class CreateOrUpdateGuessEndpoint
             var participant = await dbContext.Participants
                 .Include(p => p.Sweepstakes)
                 .FirstOrDefaultAsync(p => p.SweepstakesId == request.SweepstakesId && p.UserId == userId);
-
             if (participant == null)
             {
                 return Results.Json(new { message = "User is not a participant of this sweepstakes." }, statusCode: StatusCodes.Status403Forbidden);
             }
             // Verify guesses deadline
             // 4. Verify guesses deadline
-
             if (DateTime.UtcNow > participant.Sweepstakes!.GuessesDeadline)
                 throw new DomainException("Guesses deadline has passed.");
             // Verify third place requirement
@@ -102,8 +96,6 @@ public static class CreateOrUpdateGuessEndpoint
             if (string.IsNullOrWhiteSpace(request.FinalTable.First) || 
                 string.IsNullOrWhiteSpace(request.FinalTable.Second))
                 throw new DomainException("First and Second place countries are required.");
-            }
-
             if (participant.Sweepstakes.IncludeThird && string.IsNullOrWhiteSpace(request.FinalTable.Third))
                 throw new DomainException("Third place country is required for this sweepstakes.");
             // Verify unique countries in selection
@@ -113,16 +105,11 @@ public static class CreateOrUpdateGuessEndpoint
             if (countries.Count != countries.Distinct(StringComparer.OrdinalIgnoreCase).Count())
                 throw new DomainException("Countries in the final table must be unique.");
             // Upsert Guess
-
-            {
-            }
             // 6. Upsert Guess
-            // Upsert Guess
             var guess = await dbContext.Guesses.FirstOrDefaultAsync(g => g.ParticipantId == participant.Id);
             var isNew = false;
             
             if (guess == null)
-            {
                 isNew = true;
                 guess = new Guess
                 {
@@ -135,8 +122,6 @@ public static class CreateOrUpdateGuessEndpoint
                 };
                 dbContext.Guesses.Add(guess);
             else
-            }
-            {
                 guess.First = request.FinalTable.First.Trim();
                 guess.Second = request.FinalTable.Second.Trim();
                 guess.Third = participant.Sweepstakes.IncludeThird ? request.FinalTable.Third.Trim() : string.Empty;
