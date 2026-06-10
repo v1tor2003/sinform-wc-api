@@ -32,7 +32,6 @@ builder.Services.AddStackExchangeRedisCache(options =>
 // Register scoring strategy and rules
 builder.Services.AddSingleton<IScoringStrategy, DefaultScoringStrategy>();
 builder.Services.AddSingleton<IActiveSweepstakesRule, ActiveSweepstakesRule>();
-
 // Register background worker
 builder.Services.AddHostedService<SweepstakesProcessingWorker>();
 

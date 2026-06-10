@@ -80,10 +80,6 @@ namespace code.Migrations
                     b.HasKey("Phase");
                     b.ToTable("OfficialPhaseResults");
                 });
-
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
             modelBuilder.Entity("SinformWcApi.Entities.Participant", b =>
                 {
                     b.Property<Guid>("Id")
