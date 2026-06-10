@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using SinformWcApi;
+using SinformWcApi.Features.Auth;
+using SinformWcApi.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,7 +27,15 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Custom API Key Authentication middleware
+app.UseApiKeyAuthentication();
+
 app.UseOutputCache();
+
+// Register endpoints
+app.MapRegisterEndpoint();
+app.MapLoginEndpoint();
 
 app.MapGet("/health-check", () => Results.Ok("OK"))
    .WithName("HealthCheck");
